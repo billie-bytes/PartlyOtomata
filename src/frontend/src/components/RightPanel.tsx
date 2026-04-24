@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { parseDOMFromHTML, parseDomFromUrl } from '../store/api';
+import { parseDOMFromHTML, parseDomFromUrl, traverseDOM } from '../store/api';
 import { useDOMStore } from '../store/domStore';
 import { isValidHtml, isValidUrl } from '../utils/validators';
 
@@ -12,7 +12,11 @@ export function RightPanel() {
 
   const setNodes = useDOMStore(state => state.setNodes);
   const setRawHtml = useDOMStore(state => state.setRawHtml);
+  const setQuery = useDOMStore(state => state.setQuery);
+  const setMatchedNodeIds = useDOMStore(state => state.setMatchedNodeIds);
+  const setSelectedNodes = useDOMStore(state => state.setSelectedNodes);
   const nodes = useDOMStore(state => state.nodes);
+  const rawHtml = useDOMStore(state => state.rawHtml);
 
   const handleParseURL = async () => {
     if (!urlInput.trim()) {
@@ -32,6 +36,8 @@ export function RightPanel() {
       const response = await parseDomFromUrl(urlInput);
       setNodes(response.nodes, response.root_id);
       setRawHtml(typeof response.html === 'string' ? response.html : '');
+      setMatchedNodeIds([]);
+      setSelectedNodes([]);
       setSuccessMessage(`Parse URL berhasil (${response.nodes.length} nodes)`);
       setUrlInput('');
     } catch (err) {
@@ -62,10 +68,13 @@ export function RightPanel() {
       try {
         const response = await parseDOMFromHTML(content);
         setNodes(response.nodes, response.root_id);
+        setMatchedNodeIds([]);
+        setSelectedNodes([]);
         setSuccessMessage(`File berhasil diparse (${response.nodes.length} nodes)`);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Terjadi kesalahan';
-        setError(`HTML source loaded, but DOM parse failed: ${message}`);
+        setMatchedNodeIds([]);
+        setSelectedNodes([]);
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       } finally {
         setLoading(false);
       }
@@ -74,9 +83,9 @@ export function RightPanel() {
     reader.readAsText(file);
   };
 
-  const handleQuerySubmit = () => {
-    if (!nodes.length) {
-      setError('Parse DOM dulu sebelum memasukkan query');
+  const handleQuerySubmit = async () => {
+    if (!rawHtml.trim()) {
+      setError('Masukkan HTML atau URL dulu sebelum memasukkan query');
       return;
     }
 
@@ -85,7 +94,29 @@ export function RightPanel() {
       return;
     }
 
+    if (nodes.length === 0) {
+      setError('DOM belum tersedia untuk traversal');
+      return;
+    }
+
+    const selector = queryInput.trim();
     setError('');
+    setSuccessMessage('');
+    setQuery(selector);
+    setLoading(true);
+
+    try {
+      const result = await traverseDOM(selector, 'DFS');
+      setMatchedNodeIds(result.traversalOrder);
+      setSelectedNodes(result.traversalOrder);
+      setSuccessMessage(`Query aktif: ${selector} (${result.traversalOrder.length} match)`);
+    } catch (err) {
+      setMatchedNodeIds([]);
+      setSelectedNodes([]);
+      setError(err instanceof Error ? err.message : 'Traversal gagal');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
