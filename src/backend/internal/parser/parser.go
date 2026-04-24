@@ -21,6 +21,21 @@ func popLastMatchingTag(stack []*models.Node, token html.Token) []*models.Node {
 	return stack
 }
 
+func nodeFromToken(token html.Token) *models.Node {
+	node := models.NewNode(strings.ToLower(token.Data))
+
+	for _, attr := range token.Attr {
+		key := strings.ToLower(attr.Key)
+		node.Attributes[key] = attr.Val
+
+		if key == "class" {
+			node.Classes = strings.Fields(attr.Val)
+		}
+	}
+
+	return node
+}
+
 func parseHTML(htmldoc string) (*models.DOMTree, error) {
 	reader := strings.NewReader(htmldoc)
 	tokenizer := html.NewTokenizer(reader)
@@ -39,7 +54,7 @@ func parseHTML(htmldoc string) (*models.DOMTree, error) {
 
 		if tokenType == html.StartTagToken {
 			token := tokenizer.Token()
-			node := models.NewNode(token.Data)
+			node := nodeFromToken(token)
 			if tree.Nodes == nil {
 				tree = *models.NewDOMTree(node.ID)
 				stack = append(stack, node)
@@ -56,7 +71,7 @@ func parseHTML(htmldoc string) (*models.DOMTree, error) {
 		if tokenType == html.SelfClosingTagToken {
 			token := tokenizer.Token()
 
-			node := models.NewNode(token.Data)
+			node := nodeFromToken(token)
 			if len(stack) > 0 {
 				// Error handling for invalid html doc with opening tags yang ngawur
 				tree.AddChild(stack[len(stack)-1].ID, node)

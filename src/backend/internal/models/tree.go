@@ -7,6 +7,7 @@ import (
 // each node represents a single HTML element
 type Node struct {
 	ID         int               `json:"id"`
+	ParentID   int               `json:"parent_id,omitempty"`
 	Tag        string            `json:"tag"`
 	Classes    []string          `json:"classes,omitempty"`
 	Attributes map[string]string `json:"attributes,omitempty"`
@@ -45,6 +46,7 @@ func (t *DOMTree) AddChild(parentID int, child *Node) error {
 		return fmt.Errorf("parent node with id: %d not found", parentID)
 	}
 
+	child.ParentID = parentID
 	t.Nodes[child.ID] = child
 	parent.Children = append(parent.Children, child.ID)
 

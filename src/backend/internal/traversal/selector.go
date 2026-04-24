@@ -48,14 +48,6 @@ type MultiSelector struct {
 	Chains []SelectorChain
 }
 
-// SpecificSelector is for 2 target
-// Example: "div p" => Target1=div, TargetRest=p, Relation=Descendant.
-type SpecificSelector struct {
-	Target1    SelectorType
-	TargetRest SelectorType
-	Relation   SelectorRelation
-}
-
 // Parsing selector input
 //	"p"        -> [{Sel:p, Relation:""}]
 //	"p > .box" -> [{Sel:p, Relation:">"}, {Sel:.box, Relation:""}]
@@ -129,26 +121,6 @@ func ParseMultiSelector(selector string) MultiSelector {
 		result.Chains = append(result.Chains, SelectorChain{Steps: steps})
 	}
 	return result
-}
-
-// ParseSpecificSelector extracts the two-step selector path that the BFS/DFS
-// "find" flow knows how to resolve.
-func ParseSpecificSelector(selector string) (SpecificSelector, bool) {
-	steps := ParseSelector(selector)
-	if len(steps) != 2 {
-		return SpecificSelector{}, false
-	}
-
-	rel := steps[0].Relation
-	if rel == NoRelation {
-		rel = Descendant
-	}
-
-	return SpecificSelector{
-		Target1:    steps[0].Sel,
-		TargetRest: steps[1].Sel,
-		Relation:   rel,
-	}, true
 }
 
 func TokenizeByComma(s string) []string {
@@ -251,7 +223,7 @@ func DetectSelectorType(s string) SelectorType {
 		for j < len(s) && s[j] != '.' && s[j] != '#' && s[j] != '[' {
 			j++
 		}
-		selectType.Tag = s[:j]
+		selectType.Tag = strings.ToLower(s[:j])
 		s = s[j:]
 	}
 
@@ -309,7 +281,7 @@ func DetectAttributes(s string) AttributeSelector {
 	for _, op := range ops {
 		idx := strings.Index(s, op)
 		if idx != -1 {
-			att.Name = strings.TrimSpace(s[:idx])
+			att.Name = strings.ToLower(strings.TrimSpace(s[:idx]))
 			att.Operator = op
 			att.Value = strings.Trim(strings.TrimSpace(s[idx+len(op):]), "\"'")
 			return att
@@ -317,13 +289,13 @@ func DetectAttributes(s string) AttributeSelector {
 	}
 
 	if idx := strings.Index(s, "="); idx != -1 {
-		att.Name = strings.TrimSpace(s[:idx])
+		att.Name = strings.ToLower(strings.TrimSpace(s[:idx]))
 		att.Operator = "="
 		att.Value = strings.Trim(strings.TrimSpace(s[idx+1:]), "\"'")
 		return att
 	}
 
-	att.Name = strings.TrimSpace(s)
+	att.Name = strings.ToLower(strings.TrimSpace(s))
 	return att
 }
 
@@ -492,17 +464,12 @@ func matchAncestorSelector(tree *models.DOMTree, nodeID int, steps []SelectorPai
 }
 
 func findParentID(tree *models.DOMTree, nodeID int) int {
-	for parentID, parent := range tree.Nodes {
-		if parent == nil {
-			continue
-		}
-		for _, childID := range parent.Children {
-			if childID == nodeID {
-				return parentID
-			}
-		}
+	node := tree.Nodes[nodeID]
+	if node == nil || node.ParentID == 0 {
+		return -1
 	}
-	return -1
+
+	return node.ParentID
 }
 
 func findChildIndex(parent *models.Node, childID int) int {
@@ -516,121 +483,4 @@ func findChildIndex(parent *models.Node, childID int) int {
 		}
 	}
 	return -1
-}
-
-// FindSpecificTargetsFromNode resolves the two-step selector path used by the
-// BFS/DFS "find" mode.
-func FindSpecificTargetsFromNode(tree *models.DOMTree, nodeID int, specific SpecificSelector, limit int) []int {
-	node := tree.Nodes[nodeID]
-	if node == nil || !MatchNode(node, specific.Target1) {
-		return nil
-	}
-
-	rel := specific.Relation
-	if rel == NoRelation {
-		rel = Descendant
-	}
-
-	switch rel {
-	case Descendant:
-		return findDescendantTargets(tree, node, specific.TargetRest, limit)
-	case Child:
-		return findChildTargets(tree, node, specific.TargetRest, limit)
-	case AdjacentSibling:
-		return findAdjacentSiblingTargets(tree, nodeID, specific.TargetRest, limit)
-	case GeneralSibling:
-		return findGeneralSiblingTargets(tree, nodeID, specific.TargetRest, limit)
-	default:
-		return nil
-	}
-}
-
-func findDescendantTargets(tree *models.DOMTree, node *models.Node, selector SelectorType, limit int) []int {
-	matches := make([]int, 0)
-	stack := make([]int, len(node.Children))
-	copy(stack, node.Children)
-
-	for len(stack) > 0 {
-		if limit > 0 && len(matches) >= limit {
-			break
-		}
-
-		n := len(stack) - 1
-		curID := stack[n]
-		stack = stack[:n]
-
-		cur := tree.Nodes[curID]
-		if cur == nil {
-			continue
-		}
-
-		if MatchNode(cur, selector) {
-			matches = append(matches, curID)
-		}
-
-		for i := len(cur.Children) - 1; i >= 0; i-- {
-			stack = append(stack, cur.Children[i])
-		}
-	}
-
-	return matches
-}
-
-func findChildTargets(tree *models.DOMTree, node *models.Node, selector SelectorType, limit int) []int {
-	matches := make([]int, 0)
-	for _, childID := range node.Children {
-		if limit > 0 && len(matches) >= limit {
-			break
-		}
-
-		if MatchNode(tree.Nodes[childID], selector) {
-			matches = append(matches, childID)
-		}
-	}
-	return matches
-}
-
-func findAdjacentSiblingTargets(tree *models.DOMTree, nodeID int, selector SelectorType, limit int) []int {
-	parentID := findParentID(tree, nodeID)
-	if parentID == -1 {
-		return nil
-	}
-
-	parent := tree.Nodes[parentID]
-	selfIdx := findChildIndex(parent, nodeID)
-	if selfIdx == -1 || selfIdx+1 >= len(parent.Children) {
-		return nil
-	}
-
-	nextID := parent.Children[selfIdx+1]
-	if MatchNode(tree.Nodes[nextID], selector) {
-		return []int{nextID}
-	}
-	return nil
-}
-
-func findGeneralSiblingTargets(tree *models.DOMTree, nodeID int, selector SelectorType, limit int) []int {
-	parentID := findParentID(tree, nodeID)
-	if parentID == -1 {
-		return nil
-	}
-
-	parent := tree.Nodes[parentID]
-	selfIdx := findChildIndex(parent, nodeID)
-	if selfIdx == -1 {
-		return nil
-	}
-
-	matches := make([]int, 0)
-	for i := selfIdx + 1; i < len(parent.Children); i++ {
-		if limit > 0 && len(matches) >= limit {
-			break
-		}
-
-		siblingID := parent.Children[i]
-		if MatchNode(tree.Nodes[siblingID], selector) {
-			matches = append(matches, siblingID)
-		}
-	}
-	return matches
 }
