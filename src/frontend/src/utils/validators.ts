@@ -3,12 +3,16 @@ export function isValidHtml(html: string): boolean {
   if (!html || html.trim().length === 0) {
     return false;
   }
-  
-  // Check open/close tags balance (simple)
-  const openTags = (html.match(/<[^/][^>]*>/g) || []).length;
-  const closeTags = (html.match(/<\/[^>]*>/g) || []).length;
-  
-  return openTags === closeTags;
+
+  // use parser for validation now
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  if (!doc.documentElement || doc.querySelector('parsererror')) {
+    return false;
+  }
+
+  return /<([a-zA-Z][^\s/>]*)/.test(html);
 }
 
 // Validasi URL format
