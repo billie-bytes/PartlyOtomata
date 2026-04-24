@@ -1,6 +1,9 @@
-import { LeftPanel, CanvasPanel, RightPanel } from '../components';
+import { useState } from 'react';
+import { LeftPanel, CanvasPanel, RightPanel, HtmlPanel } from '../components';
 
 export function Home() {
+  const [viewMode, setViewMode] = useState<'tree' | 'html'>('tree');
+
   return (
     <div className="flex w-full h-full gap-4 p-4" style={{backgroundColor: '#F7F8F0'}}>
       {/* Left Panel - Buttons */}
@@ -20,15 +23,39 @@ export function Home() {
           </div>
           {/* Title */}
           <div className="flex-1 text-center">
-            <h3 className="text-sm font-semibold text-gray-700">Filename.html DOM Tree</h3>
+            <h3 className="text-sm font-semibold text-gray-700">
+              {viewMode === 'tree' ? 'Filename.html DOM Tree' : 'Filename.html Raw HTML'}
+            </h3>
           </div>
-          {/* Spacer for balance */}
-          <div className="w-12"></div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode('tree')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                viewMode === 'tree'
+                  ? 'bg-[#355872] text-white border-[#355872]'
+                  : 'bg-white text-gray-600 border-gray-300'
+              }`}
+            >
+              Tree
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('html')}
+              className={`px-3 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                viewMode === 'html'
+                  ? 'bg-[#355872] text-white border-[#355872]'
+                  : 'bg-white text-gray-600 border-gray-300'
+              }`}
+            >
+              HTML
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto bg-gray-50">
-          <CanvasPanel />
+          {viewMode === 'tree' ? <CanvasPanel /> : <HtmlPanel />}
         </div>
       </div>
 

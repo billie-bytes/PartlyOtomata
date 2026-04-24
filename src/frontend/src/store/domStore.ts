@@ -7,9 +7,11 @@ interface DOMStore {
     nodeMap: Map<string, Node>;
     rootId: string | null;
     selectedNodes: string[];
+    rawHtml: string;
 
     // actions
     setNodes: (nodes: Node[], rootId: string) => void;
+    setRawHtml: (rawHtml: string) => void;
     getNode: (id: string) => Node | undefined;
     setSelectedNodes: (ids: string[]) => void;
     clearStore: () => void;
@@ -20,11 +22,14 @@ export const useDOMStore = create<DOMStore>((set, get) => ({
     nodeMap: new Map(),
     rootId: null,
     selectedNodes: [],
+    rawHtml: '',
 
     setNodes: (nodes, rootId) => {
         const nodeMap = new Map(nodes.map(n => [n.id, n]));
         set({ nodes, nodeMap, rootId });
     },
+
+    setRawHtml: (rawHtml) => set({ rawHtml }),
 
     getNode: (id) => get().nodeMap.get(id),
     setSelectedNodes: (ids) => set({selectedNodes: ids}),
@@ -34,5 +39,6 @@ export const useDOMStore = create<DOMStore>((set, get) => ({
         nodeMap: new Map(),
         rootId: null,
         selectedNodes: [],
+        rawHtml: '',
     }),
 }));

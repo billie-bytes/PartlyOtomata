@@ -10,6 +10,7 @@ export function RightPanel() {
   const [successMessage, setSuccessMessage] = useState('');
   
   const setNodes = useDOMStore(state => state.setNodes);
+  const setRawHtml = useDOMStore(state => state.setRawHtml);
   const nodes = useDOMStore(state => state.nodes);
 
   // Parse URL
@@ -29,6 +30,7 @@ export function RightPanel() {
     try {
       const response = await parseDomFromUrl(urlInput);
       setNodes(response.nodes, response.root_id);
+      setRawHtml(typeof response.html === 'string' ? response.html : '');
       setSuccessMessage(`✅ Parse URL berhasil! (${response.nodes.length} nodes)`);
       setUrlInput('');
     } catch (err) {
@@ -58,6 +60,7 @@ export function RightPanel() {
       try {
         const response = await parseDOMFromHTML(content);
         setNodes(response.nodes, response.root_id);
+        setRawHtml(content);
         setSuccessMessage(`✅ File berhasil diparse! (${response.nodes.length} nodes)`);
       } catch (err) {
         setError(`❌ ${err instanceof Error ? err.message : 'Terjadi kesalahan'}`);
