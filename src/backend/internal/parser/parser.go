@@ -36,7 +36,7 @@ func nodeFromToken(token html.Token) *models.Node {
 	return node
 }
 
-func parseHTML(htmldoc string) (*models.DOMTree, error) {
+func ParseHTML(htmldoc string) (*models.DOMTree, error) {
 	reader := strings.NewReader(htmldoc)
 	tokenizer := html.NewTokenizer(reader)
 	var tree models.DOMTree
