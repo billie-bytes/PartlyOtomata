@@ -5,6 +5,7 @@ import { isValidHtml, isValidUrl } from '../utils/validators';
 
 export function RightPanel() {
   const [urlInput, setUrlInput] = useState('');
+  const [queryInput, setQueryInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -73,6 +74,20 @@ export function RightPanel() {
     reader.readAsText(file);
   };
 
+  const handleQuerySubmit = () => {
+    if (!nodes.length) {
+      setError('Parse DOM dulu sebelum memasukkan query');
+      return;
+    }
+
+    if (!queryInput.trim()) {
+      setError('Query tidak boleh kosong');
+      return;
+    }
+
+    setError('');
+  };
+
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto">
       <div className="bg-white rounded-lg shadow-md p-4">
@@ -117,6 +132,33 @@ export function RightPanel() {
             style={{ accentColor: '#355872' }}
           />
         </label>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md p-4">
+        <h3 className="font-bold mb-3 text-sm" style={{ color: '#355872' }}>
+          Masukkan Query
+        </h3>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={queryInput}
+            onChange={e => setQueryInput(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && handleQuerySubmit()}
+            placeholder="div > p"
+            className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
+            style={{ borderColor: '#7AAACE', color: '#355872' }}
+          />
+          <button
+            type="button"
+            onClick={handleQuerySubmit}
+            className="flex-shrink-0 px-4 py-2 text-white rounded text-sm font-semibold transition-colors"
+            style={{ backgroundColor: '#355872' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2a4659')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#355872')}
+          >
+            GO
+          </button>
+        </div>
       </div>
 
       {successMessage && (
