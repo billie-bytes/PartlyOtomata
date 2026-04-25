@@ -1,28 +1,37 @@
+
+console.log("Pre-building React application...");
+const buildResult = await Bun.build({
+  entrypoints: ['./src/frontend.tsx'],
+  target: 'browser',
+});
+
+if (!buildResult.success) {
+  console.error("Build failed:", buildResult.logs);
+} else {
+  console.log("Build successful! App is ready in memory.");
+}
+
+const compiledAppJS = buildResult.outputs[0];
+
 const PORT = process.env.PORT || 3000;
+
 const server = Bun.serve({
   hostname: "0.0.0.0",
   port: Number(PORT),
   async fetch(req) {
     const url = new URL(req.url);
-
-    // 1. App Bundle
     if (url.pathname === '/app.js') {
-      const result = await Bun.build({
-        entrypoints: ['./src/frontend.tsx'],
-        target: 'browser',
+      return new Response(compiledAppJS, {
+        headers: { 'Content-Type': 'application/javascript' }
       });
-      return new Response(result.outputs[0]);
     }
 
-    // 2. Compiled CSS
     if (url.pathname === '/index.css') {
       const css = Bun.file('./dist/index.css');
       if (await css.exists()) {
         return new Response(css, { headers: { 'Content-Type': 'text/css' } });
       }
     }
-
-    // 3. The HTML Template
     return new Response(getHTMLTemplate(), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
