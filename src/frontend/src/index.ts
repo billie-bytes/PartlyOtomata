@@ -13,7 +13,7 @@ if (!buildResult.success) {
 
 const compiledAppJS = buildResult.outputs[0];
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 const server = Bun.serve({
   hostname: "0.0.0.0",

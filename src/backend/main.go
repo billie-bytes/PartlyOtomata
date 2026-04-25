@@ -14,8 +14,8 @@ func main() {
 
 	http.HandleFunc("/api/traverse", api.HandleTraverse)
 
-	log.Println("Server backend Golang beroperasi pada http://localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
+	log.Println("Server backend Golang beroperasi pada http://localhost:80")
+	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Fatal("Kegagalan server: ", err)
 	}
