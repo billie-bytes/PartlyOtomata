@@ -24,6 +24,7 @@ type TraversalRequest struct {
 	HTML        string `json:"html,omitempty"`
 	Algorithm   string `json:"algorithm"`
 	CSSSelector string `json:"css_selector"`
+	ResultLimit int    `json:"result_limit"`
 }
 
 // Helper to prevent frontend CORS blocking
@@ -129,7 +130,7 @@ func HandleTraverse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultsMap := traversal.RunMultipleQueries(domTree, cleanSelectors, algo, 0)
+	resultsMap := traversal.RunMultipleQueries(domTree, cleanSelectors, algo, req.ResultLimit)
 
 	json.NewEncoder(w).Encode(resultsMap)
 }
