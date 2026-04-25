@@ -1,7 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+@source "./index.ts";
+@source "../index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
 /* Custom file input styling for new color scheme */
 input[type="file"]::file-selector-button {
   background-color: #355872;
@@ -24,3 +26,4 @@ input[type="file"]:disabled::file-selector-button {
   background-color: #999;
   cursor: not-allowed;
 }
+

@@ -1,13 +1,10 @@
-// src/frontend.tsx
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
-// import './index.css'; // Opsional: jika ingin melampirkan CSS lewat JS
+import App from './App'; 
 
 const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error("Failed to find the root element");
 
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(<App />);
-} else {
-  console.error("Elemen dengan id 'root' tidak ditemukan!");
-}
+const root = createRoot(rootElement);
+
+root.render(<App/>);

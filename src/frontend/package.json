@@ -3,17 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {
+"scripts": {
     "dev": "bun --hot src/index.ts",
-    "tailwind": "tailwind -i src/index.css -o dist/index.css --watch",
-    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
+    "tailwind": "bunx @tailwindcss/cli -i src/index.css -o dist/index.css --watch",
+    "build": "bunx @tailwindcss/cli -i src/index.css -o dist/index.css && bun build ./src/frontend.tsx --outdir=dist --target=browser --minify",
     "start": "NODE_ENV=production bun src/index.ts"
-  },
+},
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.1",
-    "tailwind": "^4.0.0",
+    "tailwindcss": "^4.0.0", 
+    "@tailwindcss/cli": "^4.0.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

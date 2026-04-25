@@ -1,46 +1,37 @@
-const PORT = 3000;
-
-Bun.serve({
-  port: PORT,
-  async fetch(req: Request) {
+const PORT = process.env.PORT || 3000;
+const server = Bun.serve({
+  hostname: "0.0.0.0",
+  port: Number(PORT),
+  async fetch(req) {
     const url = new URL(req.url);
 
-    // Serve bundled app
+    // 1. App Bundle
     if (url.pathname === '/app.js') {
-      try {
-        const result = await Bun.build({
-          entrypoints: ['./src/frontend.tsx'],
-          target: 'browser',
-          sourcemap: 'external',
-        });
+      const result = await Bun.build({
+        entrypoints: ['./src/frontend.tsx'],
+        target: 'browser',
+      });
+      return new Response(result.outputs[0]);
+    }
 
-        const code = await result.outputs[0].text();
-        return new Response(code, {
-          headers: { 'Content-Type': 'application/javascript' },
-        });
-      } catch (err) {
-        console.error('Build error:', err);
-        return new Response('Failed to build app', { status: 500 });
+    // 2. Compiled CSS
+    if (url.pathname === '/index.css') {
+      const css = Bun.file('./dist/index.css');
+      if (await css.exists()) {
+        return new Response(css, { headers: { 'Content-Type': 'text/css' } });
       }
     }
 
-    // Try to serve static files
-    try {
-      const file = await Bun.file(`./src${url.pathname}`).text();
-      const contentType = getContentType(url.pathname);
-      return new Response(file, {
-        headers: { 'Content-Type': contentType },
-      });
-    } catch {
-      // SPA Fallback: Serve HTML for all other routes (React Router will handle them)
-      return new Response(getHTMLTemplate(), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
-    }
+    // 3. The HTML Template
+    return new Response(getHTMLTemplate(), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   },
 });
 
-function getHTMLTemplate(): string {
+console.log(`Server running at ${server.url}`);
+
+function getHTMLTemplate() {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,14 +50,3 @@ function getHTMLTemplate(): string {
 </body>
 </html>`;
 }
-
-function getContentType(pathname: string): string {
-  if (pathname.endsWith('.ts') || pathname.endsWith('.tsx')) return 'application/typescript';
-  if (pathname.endsWith('.js')) return 'application/javascript';
-  if (pathname.endsWith('.json')) return 'application/json';
-  if (pathname.endsWith('.css')) return 'text/css';
-  if (pathname.endsWith('.html')) return 'text/html';
-  return 'application/octet-stream';
-}
-
-console.log(`Server running at http://localhost:${PORT} 🚀`);
