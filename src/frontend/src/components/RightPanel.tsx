@@ -6,6 +6,7 @@ import { isValidHtml, isValidUrl } from '../utils/validators';
 export function RightPanel() {
   const [urlInput, setUrlInput] = useState('');
   const [queryInput, setQueryInput] = useState('');
+  const [algorithm, setAlgorithm] = useState<'DFS' | 'BFS'>('DFS');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -14,6 +15,8 @@ export function RightPanel() {
   const setRawHtml = useDOMStore(state => state.setRawHtml);
   const setQuery = useDOMStore(state => state.setQuery);
   const setMatchedNodeIds = useDOMStore(state => state.setMatchedNodeIds);
+  const setVisitedNodeIds = useDOMStore(state => state.setVisitedNodeIds);
+  const setTraversalData = useDOMStore(state => state.setTraversalData);
   const setSelectedNodes = useDOMStore(state => state.setSelectedNodes);
   const nodes = useDOMStore(state => state.nodes);
   const rawHtml = useDOMStore(state => state.rawHtml);
@@ -37,6 +40,8 @@ export function RightPanel() {
       setNodes(response.nodes, response.root_id);
       setRawHtml(typeof response.html === 'string' ? response.html : '');
       setMatchedNodeIds([]);
+      setVisitedNodeIds([]);
+      setTraversalData(null, 0);
       setSelectedNodes([]);
       setSuccessMessage(`Parse URL berhasil (${response.nodes.length} nodes)`);
       setUrlInput('');
@@ -69,10 +74,14 @@ export function RightPanel() {
         const response = await parseDOMFromHTML(content);
         setNodes(response.nodes, response.root_id);
         setMatchedNodeIds([]);
+        setVisitedNodeIds([]);
+        setTraversalData(null, 0);
         setSelectedNodes([]);
         setSuccessMessage(`File berhasil diparse (${response.nodes.length} nodes)`);
       } catch (err) {
         setMatchedNodeIds([]);
+        setVisitedNodeIds([]);
+        setTraversalData(null, 0);
         setSelectedNodes([]);
         setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       } finally {
@@ -106,12 +115,18 @@ export function RightPanel() {
     setLoading(true);
 
     try {
-      const result = await traverseDOM(selector, 'DFS');
-      setMatchedNodeIds(result.traversalOrder);
-      setSelectedNodes(result.traversalOrder);
-      setSuccessMessage(`Query aktif: ${selector} (${result.traversalOrder.length} match)`);
+      const result = await traverseDOM(selector, algorithm);
+      const matchedIds = result.traversalOrder.map(id => String(id));
+      const visitedIds = (result.visitedOrder ?? result.traversalOrder).map(id => String(id));
+      setMatchedNodeIds(matchedIds);
+      setVisitedNodeIds(visitedIds);
+      setTraversalData(result.algorithm || algorithm, result.traversalLength);
+      setSelectedNodes(matchedIds);
+      setSuccessMessage(`Query aktif: ${selector} (${matchedIds.length} match, ${result.algorithm || algorithm})`);
     } catch (err) {
       setMatchedNodeIds([]);
+      setVisitedNodeIds([]);
+      setTraversalData(null, 0);
       setSelectedNodes([]);
       setError(err instanceof Error ? err.message : 'Traversal gagal');
     } finally {
@@ -169,6 +184,30 @@ export function RightPanel() {
         <h3 className="font-bold mb-3 text-sm" style={{ color: '#355872' }}>
           Masukkan Query
         </h3>
+        <div className="flex gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => setAlgorithm('DFS')}
+            className={`flex-1 px-3 py-1 rounded text-xs font-semibold border transition-colors ${
+              algorithm === 'DFS'
+                ? 'bg-[#355872] text-white border-[#355872]'
+                : 'bg-white text-gray-600 border-gray-300'
+            }`}
+          >
+            DFS
+          </button>
+          <button
+            type="button"
+            onClick={() => setAlgorithm('BFS')}
+            className={`flex-1 px-3 py-1 rounded text-xs font-semibold border transition-colors ${
+              algorithm === 'BFS'
+                ? 'bg-[#355872] text-white border-[#355872]'
+                : 'bg-white text-gray-600 border-gray-300'
+            }`}
+          >
+            BFS
+          </button>
+        </div>
         <div className="flex gap-2 mb-2">
           <input
             type="text"
@@ -211,6 +250,9 @@ export function RightPanel() {
           </p>
           <p className="text-xs text-gray-700">
             Total Nodes: <span className="font-bold">{nodes.length}</span>
+          </p>
+          <p className="text-xs text-gray-700">
+            Algorithm: <span className="font-bold">{algorithm}</span>
           </p>
         </div>
       )}
