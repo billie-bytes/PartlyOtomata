@@ -38,4 +38,4 @@ Sistem PartlyOtomata telah dikontainerisasi menggunakan Docker, sehingga proses 
    git clone https://github.com/billie-bytes/PartlyOtomata
 
 2. **Menjalankan Kontainer Docker:**
-    ``` cd src && docker-compose up
+    ``` cd src && docker-compose up --build
