@@ -60,7 +60,6 @@ func ParseHTML(htmldoc string) (*models.DOMTree, error) {
 				tree = *models.NewDOMTree(node.ID)
 				stack = append(stack, node)
 
-				// FIX: Use the helper method instead of map indexing
 				tree.AddNode(node)
 
 			} else if len(stack) > 0 {
