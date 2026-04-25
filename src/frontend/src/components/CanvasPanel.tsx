@@ -39,6 +39,7 @@ export function CanvasPanel() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(-1);
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
   const layout = useMemo(() => {
     if (!rootId || nodes.length === 0) {
@@ -126,6 +127,12 @@ export function CanvasPanel() {
   }, [query, traversalAlgorithm, matchedNodeIds, visitedNodeIds]);
 
   useEffect(() => {
+    if (activeNodeId && !nodeMap.has(activeNodeId)) {
+      setActiveNodeId(null);
+    }
+  }, [activeNodeId, nodeMap]);
+
+  useEffect(() => {
     if (!isPlaying || animationOrder.length === 0) return;
 
     if (currentStep >= animationOrder.length - 1) {
@@ -157,6 +164,14 @@ export function CanvasPanel() {
   const matchedIdSet = new Set(matchedNodeIds);
   const animatedCount = currentStep >= 0 ? Math.min(currentStep + 1, animationOrder.length) : 0;
   const traversalLabel = traversalAlgorithm ?? 'Belum ada traversal';
+  const activeNode = activeNodeId ? nodeMap.get(activeNodeId) ?? null : null;
+  const traversalLog = visitedNodeIds.map((id, index) => ({
+    step: index + 1,
+    id,
+    node: nodeMap.get(id) ?? null,
+    matched: matchedIdSet.has(id),
+    current: currentAnimatedId === id,
+  }));
 
   const startAnimation = () => {
     if (animationOrder.length === 0) return;
@@ -215,6 +230,68 @@ export function CanvasPanel() {
       </div>
 
       <div className="flex-1 overflow-auto bg-[#f8fafc]">
+        {(activeNode || traversalLog.length > 0) && (
+          <div className="mx-4 mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            {activeNode ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-semibold text-gray-900">Node Detail</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveNodeId(null)}
+                    className="rounded border border-gray-300 px-2 py-1 text-[11px] font-semibold text-gray-600"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span className="font-semibold">ID</span>
+                  <span>{activeNode.id}</span>
+                  <span className="font-semibold">Tag</span>
+                  <span>{activeNode.tag}</span>
+                  <span className="font-semibold">Parent</span>
+                  <span>{activeNode.parent_id ?? '-'}</span>
+                  <span className="font-semibold">Children</span>
+                  <span>{activeNode.children.length > 0 ? activeNode.children.join(', ') : '-'}</span>
+                  <span className="font-semibold">Classes</span>
+                  <span>{activeNode.classes.length > 0 ? activeNode.classes.join(', ') : '-'}</span>
+                  <span className="font-semibold">Attributes</span>
+                  <span>{formatAttributes(activeNode.attributes)}</span>
+                  <span className="font-semibold">Text</span>
+                  <span>{activeNode.text?.trim() ? activeNode.text : '-'}</span>
+                </div>
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {traversalLog.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-700 shadow-sm">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-semibold text-gray-900">Traversal Log</span>
+                  <span className="text-[11px] text-gray-500">{traversalLog.length} langkah</span>
+                </div>
+                <div className="max-h-56 overflow-auto rounded border border-gray-100">
+                  {traversalLog.map(entry => (
+                    <button
+                      key={`${entry.step}-${entry.id}`}
+                      type="button"
+                      onClick={() => setActiveNodeId(entry.id)}
+                      className={`flex w-full items-center justify-between border-b border-gray-100 px-3 py-2 text-left last:border-b-0 ${
+                        entry.current ? 'bg-orange-50' : entry.matched ? 'bg-yellow-50' : 'bg-white'
+                      }`}
+                    >
+                      <span className="font-mono text-[11px] text-gray-500">{entry.step}</span>
+                      <span className="flex-1 px-3 text-gray-800">
+                        {entry.node ? `${entry.node.tag} (#${entry.id})` : `node #${entry.id}`}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <svg width={layout.width} height={layout.height} className="min-w-full min-h-full">
           {layout.layoutEdges.map(edge => (
             <line
@@ -235,21 +312,26 @@ export function CanvasPanel() {
 
             let fill = '#e2e8f0';
             let stroke = '#94a3b8';
+            if (isVisited && !isMatched) {
+              fill = '#bfdbfe';
+              stroke = '#3b82f6';
+            }
+            if (isCurrent && !isMatched) {
+              fill = '#fdba74';
+              stroke = '#ea580c';
+            }
             if (isMatched) {
               fill = '#fde68a';
               stroke = '#f59e0b';
             }
-            if (isVisited) {
-              fill = '#bfdbfe';
-              stroke = '#3b82f6';
-            }
-            if (isCurrent) {
-              fill = '#fdba74';
-              stroke = '#ea580c';
-            }
 
             return (
-              <g key={item.id} transform={`translate(${item.x - NODE_WIDTH / 2}, ${item.y - NODE_HEIGHT / 2})`}>
+              <g
+                key={item.id}
+                transform={`translate(${item.x - NODE_WIDTH / 2}, ${item.y - NODE_HEIGHT / 2})`}
+                onClick={() => setActiveNodeId(item.id)}
+                style={{ cursor: 'pointer' }}
+              >
                 <rect
                   width={NODE_WIDTH}
                   height={NODE_HEIGHT}
@@ -275,4 +357,13 @@ export function CanvasPanel() {
       </div>
     </div>
   );
+}
+
+function formatAttributes(attributes: Record<string, string>): string {
+  const entries = Object.entries(attributes);
+  if (entries.length === 0) {
+    return '-';
+  }
+
+  return entries.map(([key, value]) => `${key}="${value}"`).join(', ');
 }

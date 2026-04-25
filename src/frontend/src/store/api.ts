@@ -50,7 +50,8 @@ export async function traverseDOM(
   url: string,
   html: string,
   selector: string,
-  algorithm: "DFS" | "BFS"
+  algorithm: "DFS" | "BFS",
+  resultLimit: number
 ): Promise<MultiTraversalResponse> {
   const response = await fetch(`${API_BASE}/api/traverse`, {
     method: "POST",
@@ -60,6 +61,7 @@ export async function traverseDOM(
       html: html,
       algorithm: algorithm,
       css_selector: selector,
+      result_limit: resultLimit,
     }),
   });
   return handleResponse<MultiTraversalResponse>(response);

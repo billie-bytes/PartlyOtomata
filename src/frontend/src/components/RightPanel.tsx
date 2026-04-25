@@ -6,6 +6,7 @@ import { isValidHtml, isValidUrl } from '../utils/validators';
 export function RightPanel() {
   const [urlInput, setUrlInput] = useState('');
   const [queryInput, setQueryInput] = useState('');
+  const [resultLimitInput, setResultLimitInput] = useState('');
   const [algorithm, setAlgorithm] = useState<'DFS' | 'BFS'>('DFS');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -110,6 +111,13 @@ export function RightPanel() {
     }
 
     const selector = queryInput.trim();
+    const resultLimit = resultLimitInput.trim() === '' ? 0 : Number(resultLimitInput.trim());
+
+    if (!Number.isInteger(resultLimit) || resultLimit < 0) {
+      setError('Jumlah hasil tidak valid');
+      return;
+    }
+
     setError('');
     setSuccessMessage('');
     setQuery(selector);
@@ -117,7 +125,7 @@ export function RightPanel() {
 
     try {
       // resultMap is now a Record/Dictionary mapping selectors to their results
-      const resultMap = await traverseDOM("", rawHtml, selector, algorithm);
+      const resultMap = await traverseDOM("", rawHtml, selector, algorithm, resultLimit);
       
       let allMatchedIds: string[] = [];
       let allVisitedIds: string[] = [];
@@ -258,6 +266,18 @@ export function RightPanel() {
             GO
           </button>
         </div>
+        <div className="mt-2">
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={resultLimitInput}
+            onChange={e => setResultLimitInput(e.target.value)}
+            placeholder="Jumlah hasil"
+            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
+            style={{ borderColor: '#7AAACE', color: '#355872' }}
+          />
+        </div>
       </div>
 
       {successMessage && (
@@ -269,25 +289,6 @@ export function RightPanel() {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-800 px-3 py-2 rounded text-xs">
           {error}
-        </div>
-      )}
-
-      {nodes.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="font-semibold mb-2 text-sm" style={{ color: '#355872' }}>
-            DOM Info:
-          </p>
-          <p className="text-xs text-gray-700">
-            Total Nodes: <span className="font-bold">{nodes.length}</span>
-          </p>
-          <p className="text-xs text-gray-700">
-            Algorithm: <span className="font-bold">{algorithm}</span>
-          </p>
-          {Object.keys(nodes).length > 0 && setTraversalData.length > 0 && (
-            <p className="text-xs text-gray-700 mt-1">
-              Total Operations (Length): <span className="font-bold text-blue-600">{useDOMStore.getState().traversalLength}</span>
-            </p>
-          )}
         </div>
       )}
     </div>
