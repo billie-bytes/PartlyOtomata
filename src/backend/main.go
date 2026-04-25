@@ -29,7 +29,7 @@ func main() {
 	http.HandleFunc("/api/parse-url", enableCors(api.HandleParseURL))
 	http.HandleFunc("/api/traverse", enableCors(api.HandleTraverse))
 
-	log.Println("Backend Go running on port 80 with CORS enabled 2")
+	log.Println("Backend Go running on port 80 with CORS enabled 3")
 	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		log.Fatal("Server error: ", err)

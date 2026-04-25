@@ -38,7 +38,7 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Server running at ${server.url}`);
+console.log(`Server running at ${server.url} newwwww`);
 
 function getHTMLTemplate() {
   return `<!DOCTYPE html>
