@@ -1,4 +1,4 @@
-package core
+package traversal
 
 import (
 	"strings"
@@ -148,6 +148,7 @@ func TokenizeByComma(s string) []string {
 	tokens = append(tokens, s[j:])
 	return tokens
 }
+
 func Tokenize(s string) []string {
 	s = strings.TrimSpace(s)
 	if len(s) == 0 {
@@ -376,7 +377,7 @@ func MatchAttribute(node *models.Node, attr AttributeSelector) bool {
 }
 
 // returns true if nodeID satisfies at least one selector
-func MatchesAnySelector(tree *models.DOMTree, nodeID int, multi MultiSelector) bool {
+func MatchesAnySelector(tree *models.DOMTree, nodeID string, multi MultiSelector) bool {
 	for _, chain := range multi.Chains {
 		if MatchMultiSelector(tree, nodeID, chain) {
 			return true
@@ -386,19 +387,19 @@ func MatchesAnySelector(tree *models.DOMTree, nodeID int, multi MultiSelector) b
 }
 
 // match multiselector
-func MatchMultiSelector(tree *models.DOMTree, nodeID int, chain SelectorChain) bool {
+func MatchMultiSelector(tree *models.DOMTree, nodeID string, chain SelectorChain) bool {
 	if len(chain.Steps) == 0 {
 		return false
 	}
 	return MatchSelectorAt(tree, nodeID, chain.Steps, len(chain.Steps)-1)
 }
 
-func MatchSelectorAt(tree *models.DOMTree, nodeID int, steps []SelectorPair, idx int) bool {
+func MatchSelectorAt(tree *models.DOMTree, nodeID string, steps []SelectorPair, idx int) bool {
 	if idx < 0 {
 		return false
 	}
 
-	node := tree.Nodes[nodeID]
+	node := tree.NodeMap[nodeID]
 	if node == nil || !MatchNode(node, steps[idx].Sel) {
 		return false
 	}
@@ -419,14 +420,14 @@ func MatchSelectorAt(tree *models.DOMTree, nodeID int, steps []SelectorPair, idx
 		return matchAncestorSelector(tree, nodeID, steps, idx-1)
 	case Child:
 		parentID := findParentID(tree, nodeID)
-		return parentID != -1 && MatchSelectorAt(tree, parentID, steps, idx-1)
+		return parentID != "" && MatchSelectorAt(tree, parentID, steps, idx-1)
 	case AdjacentSibling:
 		parentID := findParentID(tree, nodeID)
-		if parentID == -1 {
+		if parentID == "" {
 			return false
 		}
 
-		parent := tree.Nodes[parentID]
+		parent := tree.NodeMap[parentID]
 		selfIdx := findChildIndex(parent, nodeID)
 		if selfIdx <= 0 {
 			return false
@@ -434,11 +435,11 @@ func MatchSelectorAt(tree *models.DOMTree, nodeID int, steps []SelectorPair, idx
 		return MatchSelectorAt(tree, parent.Children[selfIdx-1], steps, idx-1)
 	case GeneralSibling:
 		parentID := findParentID(tree, nodeID)
-		if parentID == -1 {
+		if parentID == "" {
 			return false
 		}
 
-		parent := tree.Nodes[parentID]
+		parent := tree.NodeMap[parentID]
 		selfIdx := findChildIndex(parent, nodeID)
 		if selfIdx == -1 {
 			return false
@@ -454,8 +455,8 @@ func MatchSelectorAt(tree *models.DOMTree, nodeID int, steps []SelectorPair, idx
 	}
 }
 
-func matchAncestorSelector(tree *models.DOMTree, nodeID int, steps []SelectorPair, idx int) bool {
-	for parentID := findParentID(tree, nodeID); parentID != -1; parentID = findParentID(tree, parentID) {
+func matchAncestorSelector(tree *models.DOMTree, nodeID string, steps []SelectorPair, idx int) bool {
+	for parentID := findParentID(tree, nodeID); parentID != ""; parentID = findParentID(tree, parentID) {
 		if MatchSelectorAt(tree, parentID, steps, idx) {
 			return true
 		}
@@ -463,20 +464,22 @@ func matchAncestorSelector(tree *models.DOMTree, nodeID int, steps []SelectorPai
 	return false
 }
 
-func findParentID(tree *models.DOMTree, nodeID int) int {
-	node := tree.Nodes[nodeID]
-	if node == nil || node.ParentID == 0 {
-		return -1
+func findParentID(tree *models.DOMTree, nodeID string) string {
+	node := tree.NodeMap[nodeID]
+	if node == nil || node.ParentID == nil {
+		return ""
 	}
 
-	return node.ParentID
+	// Dereference the pointer to return the actual string value
+	return *node.ParentID
 }
 
-func findChildIndex(parent *models.Node, childID int) int {
+func findChildIndex(parent *models.Node, childID string) int {
 	if parent == nil {
 		return -1
 	}
 
+	// parent.Children is now []string
 	for i, currentID := range parent.Children {
 		if currentID == childID {
 			return i

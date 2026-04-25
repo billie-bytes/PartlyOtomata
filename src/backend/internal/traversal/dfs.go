@@ -1,4 +1,4 @@
-package core
+package traversal
 
 import (
 	"tubes2/internal/models"
@@ -11,7 +11,7 @@ func RunDFS(tree *models.DOMTree, selector string, limit int) Res {
 	}
 
 	multi := ParseMultiSelector(selector)
-	stack := []int{tree.RootID}
+	stack := []string{tree.RootID}
 
 	for len(stack) > 0 {
 		if limit > 0 && len(result.ID) >= limit {
@@ -22,7 +22,7 @@ func RunDFS(tree *models.DOMTree, selector string, limit int) Res {
 		nodeID := stack[n]
 		stack = stack[:n]
 
-		node := tree.Nodes[nodeID]
+		node := tree.NodeMap[nodeID]
 		if node == nil {
 			continue
 		}

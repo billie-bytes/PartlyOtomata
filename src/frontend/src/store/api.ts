@@ -55,11 +55,20 @@ export async function parseDomFromUrl(url: string): Promise<DOMParseResponse> {
 //   "algorithm": "DFS"
 // }
 export async function traverseDOM(
+  url: string,
+  html: string,
   selector: string,
   algorithm: "DFS" | "BFS"
 ): Promise<TraversalResponse> {
-  const response = await fetch(
-    `${API_BASE}/traversal/${algorithm.toLowerCase()}?selector=${encodeURIComponent(selector)}`
-  );
+  const response = await fetch(`${API_BASE}/api/traverse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: url,
+      html: html,
+      algorithm: algorithm,
+      css_selector: selector,
+    }),
+  });
   return handleResponse<TraversalResponse>(response);
 }

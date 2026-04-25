@@ -90,6 +90,7 @@ export function RightPanel() {
     };
 
     reader.readAsText(file);
+    event.target.value = '';
   };
 
   const handleQuerySubmit = async () => {
@@ -115,14 +116,27 @@ export function RightPanel() {
     setLoading(true);
 
     try {
-      const result = await traverseDOM(selector, algorithm);
-      const matchedIds = result.traversalOrder.map(id => String(id));
-      const visitedIds = (result.visitedOrder ?? result.traversalOrder).map(id => String(id));
+      const result = await traverseDOM("", rawHtml, selector, algorithm);
+      
+      // fallbacks (|| []) in case of null
+      const safeTraversalOrder = result.traversalOrder || [];
+      const safeVisitedOrder = result.visitedOrder || safeTraversalOrder;
+
+      const matchedIds = safeTraversalOrder.map(id => String(id));
+      const visitedIds = safeVisitedOrder.map(id => String(id));
+      
       setMatchedNodeIds(matchedIds);
       setVisitedNodeIds(visitedIds);
-      setTraversalData(result.algorithm || algorithm, result.traversalLength);
+      setTraversalData(result.algorithm || algorithm, result.traversalLength || 0);
       setSelectedNodes(matchedIds);
-      setSuccessMessage(`Query aktif: ${selector} (${matchedIds.length} match, ${result.algorithm || algorithm})`);
+
+      // Check the length for if no matches were found
+      if (matchedIds.length === 0) {
+        setSuccessMessage(`Query aktif: ${selector} (Tidak ada hasil yang ditemukan)`);
+      } else {
+        setSuccessMessage(`Query aktif: ${selector} (${matchedIds.length} match, ${result.algorithm || algorithm})`);
+      }
+      
     } catch (err) {
       setMatchedNodeIds([]);
       setVisitedNodeIds([]);

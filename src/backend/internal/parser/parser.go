@@ -37,6 +37,7 @@ func nodeFromToken(token html.Token) *models.Node {
 }
 
 func ParseHTML(htmldoc string) (*models.DOMTree, error) {
+	models.ResetNodeCount()
 	reader := strings.NewReader(htmldoc)
 	tokenizer := html.NewTokenizer(reader)
 	var tree models.DOMTree
@@ -58,7 +59,10 @@ func ParseHTML(htmldoc string) (*models.DOMTree, error) {
 			if tree.Nodes == nil {
 				tree = *models.NewDOMTree(node.ID)
 				stack = append(stack, node)
-				tree.Nodes[node.ID] = node
+
+				// FIX: Use the helper method instead of map indexing
+				tree.AddNode(node)
+
 			} else if len(stack) > 0 {
 				tree.AddChild(stack[len(stack)-1].ID, node)
 				stack = append(stack, node)
@@ -88,5 +92,8 @@ func ParseHTML(htmldoc string) (*models.DOMTree, error) {
 		}
 
 	}
+
+	tree.HTML = htmldoc
+
 	return &tree, nil
 }

@@ -1,7 +1,8 @@
-package core
+package traversal
+
 type Res struct {
-	ID          []int `json:"traversalOrder"`
-	VisitedOrder []int  `json:"visitedOrder"`
-	VisitLength int   `json:"traversalLength"`
-	Algorithm 	string `json:"algorithm"`
+	ID           []string `json:"traversalOrder"`
+	VisitedOrder []string `json:"visitedOrder"`
+	VisitLength  int      `json:"traversalLength"`
+	Algorithm    string   `json:"algorithm"`
 }

@@ -1,4 +1,4 @@
-package core
+package traversal
 
 import (
 	"tubes2/internal/models"
@@ -11,7 +11,7 @@ func RunBFS(tree *models.DOMTree, selector string, limit int) Res {
 	}
 
 	multi := ParseMultiSelector(selector)
-	queue := []int{tree.RootID}
+	queue := []string{tree.RootID}
 
 	for len(queue) > 0 {
 		if limit > 0 && len(result.ID) >= limit {
@@ -21,7 +21,7 @@ func RunBFS(tree *models.DOMTree, selector string, limit int) Res {
 		nodeID := queue[0]
 		queue = queue[1:]
 
-		node := tree.Nodes[nodeID]
+		node := tree.NodeMap[nodeID]
 		if node == nil {
 			continue
 		}
