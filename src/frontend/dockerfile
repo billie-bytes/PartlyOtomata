@@ -1,12 +1,15 @@
 
 FROM oven/bun:alpine
 
+
 WORKDIR /app
 
 COPY package.json bun.lockb* ./
 RUN bun install
 
 COPY . .
+ARG API_BASE_URL=https://partyotomata-cedeacemfeesb2ec.eastasia-01.azurewebsites.net
+ENV API_BASE=$API_BASE_URL
 RUN bun run build
 RUN mkdir -p dist && bunx @tailwindcss/cli -i src/index.css -o dist/index.css
 

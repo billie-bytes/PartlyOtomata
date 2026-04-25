@@ -1,6 +1,6 @@
 import type { DOMParseResponse, MultiTraversalResponse } from "../types/node";
 
-const API_BASE = "partyotomata-cedeacemfeesb2ec.eastasia-01.azurewebsites.net";
+const API_BASE = "https://partyotomata-cedeacemfeesb2ec.eastasia-01.azurewebsites.net";
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
