@@ -15,7 +15,8 @@ export interface DOMParseResponse {
 }
 
 export interface TraversalResponse {
-  traversalOrder: string[];
+  traversalOrder: Array<string | number>;
+  visitedOrder?: Array<string | number>;
   traversalLength: number;
   algorithm: "DFS" | "BFS" | string;
 }

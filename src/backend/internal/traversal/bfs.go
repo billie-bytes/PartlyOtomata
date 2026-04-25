@@ -26,6 +26,7 @@ func RunBFS(tree *models.DOMTree, selector string, limit int) Res {
 			continue
 		}
 
+		result.VisitedOrder = append(result.VisitedOrder, nodeID)
 		result.VisitLength++
 
 		if MatchesAnySelector(tree, nodeID, multi) {
