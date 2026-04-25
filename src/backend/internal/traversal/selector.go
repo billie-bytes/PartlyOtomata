@@ -2,6 +2,7 @@ package traversal
 
 import (
 	"strings"
+	"sync"
 	"tubes2/internal/models"
 )
 
@@ -486,4 +487,36 @@ func findChildIndex(parent *models.Node, childID string) int {
 		}
 	}
 	return -1
+}
+
+func RunMultipleQueries(tree *models.DOMTree, selectors []string, algo string, limit int) map[string]Res {
+	results := make(map[string]Res)
+	if tree == nil || len(selectors) == 0 {
+		return results
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	for _, selector := range selectors {
+		wg.Add(1)
+
+		go func(sel string) {
+			defer wg.Done()
+
+			var res Res
+			if algo == "DFS" {
+				res = RunDFS(tree, sel, limit)
+			} else {
+				res = RunBFS(tree, sel, limit)
+			}
+
+			mu.Lock()
+			results[sel] = res
+			mu.Unlock()
+		}(selector)
+	}
+
+	wg.Wait()
+	return results
 }

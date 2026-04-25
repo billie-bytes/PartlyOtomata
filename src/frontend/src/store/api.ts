@@ -1,4 +1,4 @@
-import type { DOMParseResponse, TraversalResponse } from "../types/node";
+import type { DOMParseResponse, MultiTraversalResponse } from "../types/node";
 
 const API_BASE = "http://localhost:8080";
 
@@ -14,7 +14,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 // {
 //   "nodes": [...],
 //   "root_id": "1",
-//   "html": "<html>...</html>" // optional
+//   "html": "<html>...</html>" 
 // }
 export async function parseDOMFromHTML(html: string): Promise<DOMParseResponse> {
   const response = await fetch(`${API_BASE}/api/parse-dom`, {
@@ -29,10 +29,11 @@ export async function parseDOMFromHTML(html: string): Promise<DOMParseResponse> 
 // {
 //   "nodes": [...],
 //   "root_id": "1",
-//   "html": "<html>...</html>" // strongly recommended so HTML preview can render URL content
+//   "html": "<html>...</html>" 
 // }
 export async function parseDomFromUrl(url: string): Promise<DOMParseResponse> {
-  const response = await fetch(`${API_BASE}/api/pasrse-url`, {
+  // Fixed typo: pasrse-url -> parse-url
+  const response = await fetch(`${API_BASE}/api/parse-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
@@ -40,26 +41,17 @@ export async function parseDomFromUrl(url: string): Promise<DOMParseResponse> {
   return handleResponse<DOMParseResponse>(response);
 }
 
-//   GET /traversal/dfs?selector=...
-//   GET /traversal/bfs?selector=...
-//
-//   POST /api/traversal
-// with body:
-//   { "selector": "div p", "algorithm": "DFS" }
-// then only rewrite this function.
-//
-// Expected backend response:
+// Expected backend response (Concurrent Map):
 // {
-//   "traversalOrder": ["5", "9", "14"],
-//   "traversalLength": 42,
-//   "algorithm": "DFS"
+//   "div": { "traversalOrder": ["5", "9"], "traversalLength": 10, "algorithm": "DFS" },
+//   "p": { "traversalOrder": ["14"], "traversalLength": 5, "algorithm": "DFS" }
 // }
 export async function traverseDOM(
   url: string,
   html: string,
   selector: string,
   algorithm: "DFS" | "BFS"
-): Promise<TraversalResponse> {
+): Promise<MultiTraversalResponse> {
   const response = await fetch(`${API_BASE}/api/traverse`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -70,5 +62,5 @@ export async function traverseDOM(
       css_selector: selector,
     }),
   });
-  return handleResponse<TraversalResponse>(response);
+  return handleResponse<MultiTraversalResponse>(response);
 }

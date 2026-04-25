@@ -87,10 +87,24 @@ func HandleTraverse(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
 	}
-
 	var req TraversalRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	rawSelectors := strings.Split(req.CSSSelector, ",")
+	var cleanSelectors []string
+	for _, s := range rawSelectors {
+		cleaned := strings.TrimSpace(s)
+		if cleaned != "" {
+			cleanSelectors = append(cleanSelectors, cleaned)
+		}
+	}
+
+	algo := strings.ToUpper(req.Algorithm)
+	if algo != "DFS" && algo != "BFS" {
+		http.Error(w, "Invalid algorithm. Must be DFS or BFS", http.StatusBadRequest)
 		return
 	}
 
@@ -105,7 +119,6 @@ func HandleTraverse(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// Both empty
 		http.Error(w, "Must provide either 'url' or 'html'", http.StatusBadRequest)
 		return
 	}
@@ -116,17 +129,7 @@ func HandleTraverse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result traversal.Res
-	algo := strings.ToUpper(req.Algorithm)
+	resultsMap := traversal.RunMultipleQueries(domTree, cleanSelectors, algo, 0)
 
-	if algo == "DFS" {
-		result = traversal.RunDFS(domTree, req.CSSSelector, 0)
-	} else if algo == "BFS" {
-		result = traversal.RunBFS(domTree, req.CSSSelector, 0)
-	} else {
-		http.Error(w, "Invalid algorithm. Must be DFS or BFS", http.StatusBadRequest)
-		return
-	}
-
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(resultsMap)
 }

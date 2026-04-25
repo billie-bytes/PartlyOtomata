@@ -14,9 +14,11 @@ export interface DOMParseResponse {
   html?: string;
 }
 
-export interface TraversalResponse {
+export interface SingleQueryResult {
   traversalOrder: Array<string | number>;
   visitedOrder?: Array<string | number>;
   traversalLength: number;
   algorithm: "DFS" | "BFS" | string;
 }
+
+export type MultiTraversalResponse = Record<string, SingleQueryResult>;

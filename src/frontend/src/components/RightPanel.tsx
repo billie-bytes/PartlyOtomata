@@ -116,25 +116,40 @@ export function RightPanel() {
     setLoading(true);
 
     try {
-      const result = await traverseDOM("", rawHtml, selector, algorithm);
+      // resultMap is now a Record/Dictionary mapping selectors to their results
+      const resultMap = await traverseDOM("", rawHtml, selector, algorithm);
       
-      // fallbacks (|| []) in case of null
-      const safeTraversalOrder = result.traversalOrder || [];
-      const safeVisitedOrder = result.visitedOrder || safeTraversalOrder;
+      let allMatchedIds: string[] = [];
+      let allVisitedIds: string[] = [];
+      let totalTraversalLength = 0;
 
-      const matchedIds = safeTraversalOrder.map(id => String(id));
-      const visitedIds = safeVisitedOrder.map(id => String(id));
+      // Extract and combine the data from all concurrent queries
+      Object.values(resultMap).forEach(result => {
+        const safeTraversalOrder = result.traversalOrder || [];
+        const safeVisitedOrder = result.visitedOrder || safeTraversalOrder;
+
+        allMatchedIds.push(...safeTraversalOrder.map(String));
+        allVisitedIds.push(...safeVisitedOrder.map(String));
+        totalTraversalLength += (result.traversalLength || 0);
+      });
+
+      // Deduplicate arrays in case multiple queries hit the same node
+      const uniqueMatchedIds = Array.from(new Set(allMatchedIds));
+      const uniqueVisitedIds = Array.from(new Set(allVisitedIds));
       
-      setMatchedNodeIds(matchedIds);
-      setVisitedNodeIds(visitedIds);
-      setTraversalData(result.algorithm || algorithm, result.traversalLength || 0);
-      setSelectedNodes(matchedIds);
+      setMatchedNodeIds(uniqueMatchedIds);
+      setVisitedNodeIds(uniqueVisitedIds);
+      setTraversalData(algorithm, totalTraversalLength);
+      setSelectedNodes(uniqueMatchedIds);
 
-      // Check the length for if no matches were found
-      if (matchedIds.length === 0) {
+      // Check how many sub-queries were actually executed
+      const queryCount = Object.keys(resultMap).length;
+
+      if (uniqueMatchedIds.length === 0) {
         setSuccessMessage(`Query aktif: ${selector} (Tidak ada hasil yang ditemukan)`);
       } else {
-        setSuccessMessage(`Query aktif: ${selector} (${matchedIds.length} match, ${result.algorithm || algorithm})`);
+        // Updated success message to mention concurrent sub-queries
+        setSuccessMessage(`Query aktif: ${selector} (${uniqueMatchedIds.length} match dari ${queryCount} query, ${algorithm})`);
       }
       
     } catch (err) {
@@ -228,7 +243,7 @@ export function RightPanel() {
             value={queryInput}
             onChange={e => setQueryInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleQuerySubmit()}
-            placeholder="div > p"
+            placeholder="div > p, a, .card"
             className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-400"
             style={{ borderColor: '#7AAACE', color: '#355872' }}
           />
@@ -268,6 +283,11 @@ export function RightPanel() {
           <p className="text-xs text-gray-700">
             Algorithm: <span className="font-bold">{algorithm}</span>
           </p>
+          {Object.keys(nodes).length > 0 && setTraversalData.length > 0 && (
+            <p className="text-xs text-gray-700 mt-1">
+              Total Operations (Length): <span className="font-bold text-blue-600">{useDOMStore.getState().traversalLength}</span>
+            </p>
+          )}
         </div>
       )}
     </div>

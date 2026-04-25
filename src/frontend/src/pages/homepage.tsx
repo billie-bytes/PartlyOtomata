@@ -24,7 +24,7 @@ export function Home() {
           {/* Title */}
           <div className="flex-1 text-center">
             <h3 className="text-sm font-semibold text-gray-700">
-              {viewMode === 'tree' ? 'Filename.html DOM Tree' : 'Filename.html Raw HTML'}
+              {viewMode === 'tree' ? 'Tree View' : 'HTML View'}
             </h3>
           </div>
           <div className="flex items-center gap-2">
